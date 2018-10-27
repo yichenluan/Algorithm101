@@ -48,7 +48,7 @@ iterator end() _NOEXCEPT {return iterator(data() + _Size);}
 var foo [3]int = [...]int{1, 2, 3}
 ```
 
-与 C++ 不同，Go 在函数调用时，传递数组并不会隐式的将数组作为指针，而是，传递这个数组的一份 Copy。
+与 C++ 不同，Go 在函数调用时，传递数组并不会隐式的将数组作为指针，而是，传递这个数组的一份 Copy，也就是说 `array` 在 Go 中是值类型(value)。
 
 ## Vector in C++
 
@@ -148,3 +148,148 @@ emm，代码非常复杂，看上去也有很多的模板技巧，但是现在�
 ```
 foo := make([]int, 3, 10)
 ```
+
+[Go Slices: usage and internals](https://blog.golang.org/go-slices-usage-and-internals) 详细描述了 Slice 的方方面面。
+
+![](http://p890o7lc8.bkt.clouddn.com/20181027125317.png)
+
+下面让我们深入源码观察 `Slice`：
+
+```go
+// 结构
+type slice struct {
+	array unsafe.Pointer
+	len   int
+	cap   int
+}
+```
+
+```go
+// 创建 slice
+func makeslice(et *_type, len, cap int) slice {
+	// 根据切片的数据类型，获取切片的最大容量
+	maxElements := maxSliceCap(et.size)
+    // 比较切片的长度，长度值域应该在[0,maxElements]之间
+	if len < 0 || uintptr(len) > maxElements {
+		panic(errorString("makeslice: len out of range"))
+	}
+    // 比较切片的容量，容量值域应该在[len,maxElements]之间
+	if cap < len || uintptr(cap) > maxElements {
+		panic(errorString("makeslice: cap out of range"))
+	}
+    // 根据切片的容量申请内存
+	p := mallocgc(et.size*uintptr(cap), et, true)
+    // 返回申请好内存的切片的首地址
+	return slice{p, len, cap}
+}
+```
+
+```go
+// 动态扩容
+// expand append(l1, l2...) to
+//   init {
+//     s := l1
+//     if n := len(l1) + len(l2) - cap(s); n > 0 {
+//       s = growslice_n(s, n)
+//     }
+//     s = s[:len(l1)+len(l2)]
+//     memmove(&s[len(l1)], &l2[0], len(l2)*sizeof(T))
+//   }
+//   s
+//
+// l2 is allowed to be a string.
+func growslice(et *_type, old slice, cap int) slice {
+	// ...
+	
+	// 1. 扩容策略
+	newcap := old.cap
+	doublecap := newcap + newcap
+	if cap > doublecap {
+		// 如果需要的大小大于 doublecap，则新 cap 为指定的 cap
+		newcap = cap
+	} else {
+		if old.len < 1024 {
+			// 如果 old.len 小于 1024，则新 cap 为 doublecap
+			newcap = doublecap
+		} else {
+			// Check 0 < newcap to detect overflow
+			// and prevent an infinite loop.
+			for 0 < newcap && newcap < cap {
+				// 如果 old.len 大于 1024，则 old.cap 以 1.25 倍增大，直到大于指定的 cap
+				newcap += newcap / 4
+			}
+			// Set newcap to the requested cap when
+			// the newcap calculation overflowed.
+			if newcap <= 0 {
+				newcap = cap
+			}
+		}
+	}
+
+	// 2. 计算实际需要分配的空间大小
+	var overflow bool
+	var lenmem, newlenmem, capmem uintptr
+	// Specialize for common values of et.size.
+	// For 1 we don't need any division/multiplication.
+	// For sys.PtrSize, compiler will optimize division/multiplication into a shift by a constant.
+	// For powers of 2, use a variable shift.
+	switch {
+	case et.size == 1:
+		// 旧 slice len 所需要的空间大小
+		lenmem = uintptr(old.len)
+		// 新 slice len 所需要的空间大小
+		newlenmem = uintptr(cap)
+		// 新 slice cap 所需要的空间大小
+		capmem = roundupsize(uintptr(newcap))
+		overflow = uintptr(newcap) > maxAlloc
+		newcap = int(capmem)
+	//...
+	default:
+		lenmem = uintptr(old.len) * et.size
+		newlenmem = uintptr(cap) * et.size
+		capmem, overflow = math.MulUintptr(et.size, uintptr(newcap))
+		capmem = roundupsize(capmem)
+		newcap = int(capmem / et.size)
+	}
+	
+	// ...
+
+	// 3. 分配内存空间，完成 copy 和初始化工作
+	var p unsafe.Pointer
+	if et.kind&kindNoPointers != 0 {
+		// 非指针类型，mallocgc 时不需要清零
+		p = mallocgc(capmem, nil, false)
+		// The append() that calls growslice is going to overwrite from old.len to cap (which will be the new length).
+		// Only clear the part that will not be overwritten.
+		// 将 [newlen:cap] 这一段赋零值
+		memclrNoHeapPointers(add(p, newlenmem), capmem-newlenmem)
+	} else {
+		// Note: can't use rawmem (which avoids zeroing of memory), because then GC can scan uninitialized memory.
+		p = mallocgc(capmem, et, true)
+		// 指针类型，分配的空间已经清零
+		if writeBarrier.enabled {
+			// Only shade the pointers in old.array since we know the destination slice p
+			// only contains nil pointers because it has been cleared during alloc.
+			// 不太懂这个是干嘛的
+			bulkBarrierPreWriteSrcOnly(uintptr(p), uintptr(old.array), lenmem)
+		}
+	}
+	// 将之前的元素 copy 过来
+	memmove(p, old.array, lenmem)
+
+	return slice{p, old.len, newcap}
+}
+```
+
+这里面需要注意的是，我看很多博客说如果 slice 底下的 array 还有空间，分配空间时会优先使用现有空间，但是我在代码中没看到相关逻辑，也没有在测试程序中复现这种现象。
+
+```go
+a := [...]int{1, 2, 3, 4, 5, 6, 7, 8} // L1
+b := a[:1:1]   // L2
+b = append(b, 0)  // L3
+
+// a: [1, 2, 3, 4, 5, 6, 7, 8]
+// b: [1, 0]
+```
+
+即，在 L3 中，b 实际是被分配到一块新的内存中了，并不会影响原有数组。

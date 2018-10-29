@@ -15,6 +15,7 @@
 对冒泡排序的一个优化是：当某次遍历时发现没有交换任何元素，则代表数组已经有序，即可完成排序过程。
 
 ```c++
+// C++
 template<class RandomIt>
 void bubble_sort(RandomIt first, RandomIt last) {
     if (first >= last) {
@@ -38,6 +39,7 @@ void bubble_sort(RandomIt first, RandomIt last) {
 ```
 
 ```go
+// Go
 func BubbleSort(data sort.Interface) {
 	n := data.Len()
 	for i := 0; i < n; i++ {
@@ -79,6 +81,7 @@ func BubbleSort(data sort.Interface) {
 [插入排序](https://zh.wikipedia.org/wiki/%E6%8F%92%E5%85%A5%E6%8E%92%E5%BA%8F) 将数组视为已排序部分和未排序部分，排序过程就是挨个将未排序部分的元素插入到已排序部分的合理位置。当未排序部分为空时，排序完成。
 
 ```c++
+// C++
 template<class RandomIt>
 void insertion_sort(RandomIt first, RandomIt last) {
     if (first >= last) {
@@ -98,6 +101,7 @@ void insertion_sort(RandomIt first, RandomIt last) {
 ```
 
 ```go
+// Go
 func InsertionSort(data sort.Interface) {
 	n := data.Len()
 	for i := 1; i < n; i++ {
@@ -131,6 +135,7 @@ func InsertionSort(data sort.Interface) {
 [选择排序](https://zh.wikipedia.org/wiki/%E9%80%89%E6%8B%A9%E6%8E%92%E5%BA%8F)是最直观的一种排序算法，每次遍历数组的全部未排序部分，找到最小的放在已排序部分的末端，以此类推，直到排序完毕。
 
 ```c++
+// C++
 template<class RandomIt>
 void selection_sort(RandomIt first, RandomIt last) {
     if (first >= last) {
@@ -148,6 +153,7 @@ void selection_sort(RandomIt first, RandomIt last) {
 ```
 
 ```go
+// Go
 func SelectionSort(data sort.Interface) {
 	n := data.Len()
 	for i := 0; i < n-1; i++ {

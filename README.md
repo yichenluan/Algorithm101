@@ -7,7 +7,8 @@ Data Structure and Alogorithm in C++ / Go.
 ### Linear List
 
 1. [Array](https://github.com/yichenluan/Algorithm101/blob/master/Linear_list/array.md)
-2. TODO
+2. [Linked List](https://github.com/yichenluan/Algorithm101/blob/master/Linear_list/linked_list.md)
+3. TODO
 
 
 ### Sort

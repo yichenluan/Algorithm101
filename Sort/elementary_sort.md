@@ -6,7 +6,7 @@
 2. 内存消耗（空间复杂度，为 O(1) 的算法称为原地排序算法）
 3. 稳定性（大小相等的两个元素在排序后保持其相对顺序）
 
-初级排序算法指的是平均时间复杂度为 O(n^2) 的算法，其中包括：冒泡排序、插入排序、选择排序、希尔排序。
+初级排序算法指的是平均时间复杂度为 O(n^2) 的算法以及它们的改进算法，其中包括：冒泡排序、插入排序、选择排序、希尔排序。
 
 ## 冒泡排序（Bubble Sort）
 
@@ -183,4 +183,67 @@ func SelectionSort(data sort.Interface) {
 	
 ## 希尔排序（Shell Sort）
 
-TODO
+[希尔排序](https://zh.wikipedia.org/wiki/%E5%B8%8C%E5%B0%94%E6%8E%92%E5%BA%8F)是对插入排序的一种改进。改进思想为：
+
+- 插入排序对已经基本有序的数据操作时，效率很高。
+- 但是插入排序一般来说是低效的，因为插入排序每次只能将数据移动一位，考虑倒序数组，每次遍历只能将最大元素往后移一位。
+
+于是，希尔排序的思想是设置一个步长，每次对步长间隔的元素进行插入排序，这样使得每次遍历元素能够移动较大距离，然后逐渐缩小步长，直到步长为 1，变为插入排序。
+
+那么，步长的选择就显得尤为重要，希尔排序最初提出时，建议步长初始为 `n/2`，并且对步长逐次取半，直到为 1。后续有人提出了更好的步长序列，这里就不详细描述了。
+
+```c++
+// C++
+template<class RandomIt>
+void shell_sort(RandomIt first, RandomIt last) {
+    int length = last - first;
+    if (length <= 0) {
+        return;
+    }
+    int gap = length / 2;
+    while (gap > 0) {
+        for (RandomIt i = first+gap; i != last; ++i) {
+            auto val = *i;
+            RandomIt j = i-gap;
+            while (j >= first && *j > val) {
+                *(j+gap) = *j;
+                j -= gap;
+            }
+            *(j+gap) = val;
+        }
+        gap /= 2;
+    }
+    return;
+}
+```
+
+```go
+// Go
+func ShellSort(data sort.Interface) {
+	n := data.Len()
+	gap := n / 2
+	for gap > 0 {
+		for i := gap; i < n; i++ {
+			for j := i; j-gap >= 0 && data.Less(j, j-gap); {
+				data.Swap(j, j-gap)
+				j -= gap
+			}
+		}
+		gap = gap / 2
+	}
+}
+```
+
+
+1. 时间复杂度
+	- 最好情况 O(n)
+	- 最坏情况 O(n^2)
+	- 平均情况 O(n^2)
+
+2. 空间复杂度
+
+	O(1)，原地排序算法
+	
+3. 稳定性
+
+	希尔排序是一种不稳定算法，因为有了步长的存在，元素会大幅度交换位置。

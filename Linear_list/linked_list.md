@@ -58,6 +58,8 @@ struct _List_iterator_base {
 
 可以看到虽然实现略有复杂，但是抽象出来的底层结构就是一般的带 dummy node 的双向循环链表，而 `std::list` 的迭代器就是指向节点的指针。
 
+![](https://raw.githubusercontent.com/steveLauwh/SGI-STL/master/The%20Annotated%20STL%20Sources%20V3.3/Other/list.PNG)
+
 下面摘出几个关键函数来看具体实现
 
 ```c++

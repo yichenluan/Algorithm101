@@ -37,13 +37,13 @@ class _List_base {
 template <class _Tp>
 struct _List_node : public _List_node_base {
 	// 数据
-  _Tp _M_data;
+	_Tp _M_data;
 };
 
 struct _List_node_base {
 	// 指针
-  _List_node_base* _M_next;
-  _List_node_base* _M_prev;
+	_List_node_base* _M_next;
+	_List_node_base* _M_prev;
 };
 
 struct _List_iterator : public _List_iterator_base {
@@ -76,7 +76,7 @@ iterator insert(iterator __position, const _Tp& __x) {
 	return __tmp;
 }
 
-// List 的排序，TODO
+// List 的排序，merge sort 的迭代版本，实在是精巧。
 template <class _Tp, class _Alloc>
 void list<_Tp, _Alloc>::sort()
 {
@@ -86,15 +86,20 @@ void list<_Tp, _Alloc>::sort()
     	list<_Tp, _Alloc> __counter[64];
     	int __fill = 0;
     	while (!empty()) {
+    		// 取待排序队首元素放到 carry 中
       		__carry.splice(__carry.begin(), *this, begin());
       		int __i = 0;
       		while(__i < __fill && !__counter[__i].empty()) {
+      			// 如果 counter 当前下标有已排序列表，进行 merge
         		__counter[__i].merge(__carry);
+        		// 交换，看下一个位置是否也如此
         		__carry.swap(__counter[__i++]);
       		}
+      		// 一轮归并、排序完毕，放回 counter 何时的位置
       		__carry.swap(__counter[__i]);         
       		if (__i == __fill) ++__fill;
-    	} 
+    	}
+    	// 将 counter 中所有元素 merge 后，得到最终排序列表
     	for (int __i = 1; __i < __fill; ++__i)
       		__counter[__i].merge(__counter[__i-1]);
     	swap(__counter[__fill-1]);

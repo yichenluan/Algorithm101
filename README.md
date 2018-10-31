@@ -14,7 +14,8 @@ Data Structure and Alogorithm in C++ / Go.
 ### Sort
 
 1. [Elementary Sort](https://github.com/yichenluan/Algorithm101/blob/master/Sort/elementary_sort.md)
-2. TODO
+2. [Merge Sort](https://github.com/yichenluan/Algorithm101/blob/master/Sort/merge_sort.md)
+3. TODO
 
 
 ### TODO

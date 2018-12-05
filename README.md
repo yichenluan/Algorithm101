@@ -19,7 +19,8 @@ Data Structure and Alogorithm in C++ / Go.
 2. [Merge Sort](https://github.com/yichenluan/Algorithm101/blob/master/Sort/merge_sort.md)
 3. [Quick Sort](https://github.com/yichenluan/Algorithm101/blob/master/Sort/quick_sort.md)
 4. [Heap Sort](https://github.com/yichenluan/Algorithm101/blob/master/Sort/heap_sort.md)
-5. TODO 
+5. [Linear Sort](https://github.com/yichenluan/Algorithm101/blob/master/Sort/linear_sort.md)
+6. TODO 
 
 
 ### TODO
